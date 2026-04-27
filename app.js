@@ -28,6 +28,7 @@ let selectedMeals = 0;
 function init() {
     if (userConfig && userConfig.goal && userConfig.meals) {
         showDashboard();
+        requestNotificationPermission();
     } else {
         showSetup();
     }
@@ -79,10 +80,8 @@ startBtn.addEventListener('click', () => {
         saveDailyData();
     }
     
-    // Generate mock history if needed for charts
-    generateMockHistory();
-    
     showDashboard();
+    requestNotificationPermission();
 });
 
 // --- Dashboard Logic ---
@@ -191,6 +190,31 @@ function saveDailyData() {
 }
 
 // --- Notifications & Messaging ---
+const mealSchedules = {
+    2: [18, 22],
+    3: [12, 18, 22],
+    4: [10, 14, 18, 22],
+    5: [9, 12, 16, 19, 22]
+};
+
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+    }
+}
+
+function sendNativeNotification(msg) {
+    if (!('Notification' in window)) return;
+    
+    const notifKey = `kalori_notif_${todayDate}_${msg}`;
+    if (localStorage.getItem(notifKey)) return; // Already sent today
+    
+    if (Notification.permission === 'granted') {
+        new Notification('KaloriÖlçer', { body: msg, icon: 'https://cdn-icons-png.flaticon.com/512/8144/8144415.png' });
+        localStorage.setItem(notifKey, 'true');
+    }
+}
+
 function checkNotifications() {
     notificationsContainer.innerHTML = '';
     
@@ -200,13 +224,24 @@ function checkNotifications() {
     let emptyMeals = 0;
     dailyData.meals.forEach(m => { if(m === null) emptyMeals++; });
     
-    // Check if end of day (e.g. after 20:00) and meals are empty
-    if (hour >= 20 && emptyMeals > 0) {
-        addNotification(`Bugün girmediniz ${emptyMeals} öğün var! Lütfen kalorilerinizi kaydedin.`, 'warning', '⚠️');
+    // Check missing meals by schedule
+    if (userConfig && userConfig.meals && mealSchedules[userConfig.meals]) {
+        const schedule = mealSchedules[userConfig.meals];
+        
+        for (let i = 0; i < schedule.length; i++) {
+            const targetHour = schedule[i];
+            const isMealEmpty = dailyData.meals[i] === null;
+            
+            if (hour >= targetHour && isMealEmpty) {
+                const msg = `Saat ${targetHour}:00'ı geçti, ${i + 1}. öğünü henüz girmediniz!`;
+                addNotification(msg, 'warning', '⚠️');
+                sendNativeNotification(msg);
+            }
+        }
     }
     
     // Check if all meals entered
-    if (emptyMeals === 0) {
+    if (emptyMeals === 0 && dailyData.meals.length > 0) {
         const diff = userConfig.goal - dailyData.total;
         if (diff === 0) {
             addNotification('Tebrikler! Günlük hedefinize tam olarak ulaştınız.', 'success', '🎯');
@@ -228,29 +263,6 @@ function addNotification(msg, type, icon) {
 // --- Charts & Mock Data ---
 let weeklyChartInstance = null;
 let monthlyChartInstance = null;
-
-function generateMockHistory() {
-    // Generate 30 days of mock data if it doesn't exist
-    if(!localStorage.getItem('kaloriHistoryGenerated')) {
-        const goal = userConfig ? userConfig.goal : 2000;
-        let date = new Date();
-        
-        for(let i = 1; i <= 30; i++) {
-            let pastDate = new Date(date);
-            pastDate.setDate(date.getDate() - i);
-            let dateStr = pastDate.toISOString().split('T')[0];
-            
-            // Random calories around the goal
-            let randomTotal = goal + (Math.floor(Math.random() * 800) - 400); 
-            
-            localStorage.setItem(`kaloriData_${dateStr}`, JSON.stringify({
-                total: randomTotal,
-                meals: [] // mockup meals
-            }));
-        }
-        localStorage.setItem('kaloriHistoryGenerated', 'true');
-    }
-}
 
 function getHistoricalData(days) {
     let labels = [];
