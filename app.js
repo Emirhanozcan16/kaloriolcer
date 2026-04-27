@@ -17,6 +17,14 @@ const mealCountDisplay = document.getElementById('meal-count-display');
 const resetBtn = document.getElementById('reset-btn');
 const notificationsContainer = document.getElementById('notifications-container');
 
+// Settings Modal Elements
+const settingsModal = document.getElementById('settings-modal');
+const closeSettingsBtn = document.getElementById('close-settings-btn');
+const newCalorieGoal = document.getElementById('new-calorie-goal');
+const saveNewGoalBtn = document.getElementById('save-new-goal-btn');
+const settingMealBtns = document.querySelectorAll('.setting-meal-btn');
+const hardResetBtn = document.getElementById('hard-reset-btn');
+
 // --- State ---
 let userConfig = JSON.parse(localStorage.getItem('kaloriConfig')) || null;
 let todayDate = new Date().toISOString().split('T')[0];
@@ -107,10 +115,60 @@ function showDashboard() {
 }
 
 resetBtn.addEventListener('click', () => {
-    if(confirm('Ayarları sıfırlamak istediğinize emin misiniz?')) {
-        localStorage.removeItem('kaloriConfig');
-        userConfig = null;
-        showSetup();
+    settingsModal.classList.remove('hidden');
+    newCalorieGoal.value = userConfig.goal;
+    
+    settingMealBtns.forEach(b => {
+        if (parseInt(b.dataset.value) === userConfig.meals) {
+            b.classList.add('selected');
+        } else {
+            b.classList.remove('selected');
+        }
+    });
+});
+
+closeSettingsBtn.addEventListener('click', () => {
+    settingsModal.classList.add('hidden');
+});
+
+saveNewGoalBtn.addEventListener('click', () => {
+    const val = parseInt(newCalorieGoal.value);
+    if (val > 0) {
+        userConfig.goal = val;
+        localStorage.setItem('kaloriConfig', JSON.stringify(userConfig));
+        renderDashboard();
+        addNotification('Kalori hedefi başarıyla güncellendi.', 'success', '✅');
+        settingsModal.classList.add('hidden');
+    }
+});
+
+settingMealBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const newVal = parseInt(e.target.dataset.value);
+        if (newVal === userConfig.meals) return;
+        
+        if(confirm(`Öğün sayısını ${newVal} olarak değiştirmek istediğinize emin misiniz?`)) {
+            userConfig.meals = newVal;
+            localStorage.setItem('kaloriConfig', JSON.stringify(userConfig));
+            
+            let newMeals = Array(newVal).fill(null);
+            for(let i=0; i<Math.min(newVal, dailyData.meals.length); i++) {
+                newMeals[i] = dailyData.meals[i];
+            }
+            dailyData.meals = newMeals;
+            saveDailyData();
+            
+            renderDashboard();
+            addNotification('Öğün sayısı güncellendi.', 'success', '✅');
+            settingsModal.classList.add('hidden');
+        }
+    });
+});
+
+hardResetBtn.addEventListener('click', () => {
+    if(confirm('Tüm geçmişi ve ayarları silmek istediğinize EMIN MİSİNİZ?')) {
+        localStorage.clear();
+        location.reload();
     }
 });
 
