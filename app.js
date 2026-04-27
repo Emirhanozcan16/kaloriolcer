@@ -163,11 +163,14 @@ function showDashboard() {
     }
 
     // Migration for old data format
-    if (dailyData.meals.length > 0 && typeof dailyData.meals[0] !== 'object') {
-        dailyData.meals = dailyData.meals.map(val => ({
-            items: (val !== null && val > 0) ? [{ name: 'Manuel Giriş', kcal: val, grams: 0 }] : [],
-            total: val || 0
-        }));
+    if (dailyData.meals.length > 0 && (dailyData.meals[0] === null || typeof dailyData.meals[0] !== 'object' || typeof dailyData.meals[0].total === 'undefined')) {
+        dailyData.meals = dailyData.meals.map(val => {
+            if (val && typeof val === 'object' && typeof val.total !== 'undefined') return val;
+            return {
+                items: (val !== null && val > 0) ? [{ name: 'Manuel Giriş', kcal: val, grams: 0 }] : [],
+                total: val || 0
+            };
+        });
         saveDailyData();
     }
     
@@ -410,7 +413,7 @@ function selectFood(food) {
     selectedFoodKcal.textContent = food.kcal_per_100g;
     selectedFoodHint.textContent = `(${food.unit_hint})`;
     foodGramInput.value = '';
-    calculatedKcalDisplay.textContent = '0';
+    updateCalculatedKcal();
     foodGramInput.focus();
 }
 
@@ -567,7 +570,12 @@ function getHistoricalData(days) {
             data.push(dailyData.total || 0); // Today
         } else {
             let hist = JSON.parse(localStorage.getItem(`kaloriData_${dateStr}`));
-            data.push(hist ? hist.total : 0);
+            let total = 0;
+            if (hist) {
+                if (typeof hist === 'number') total = hist;
+                else if (typeof hist === 'object') total = hist.total || 0;
+            }
+            data.push(total);
         }
     }
     return { labels, data };
