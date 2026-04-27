@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kalori-v3';
+const CACHE_NAME = 'kalori-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   './app.js',
   './manifest.json',
   './icon.png',
+  './yemekler.json',
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];

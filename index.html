@@ -145,6 +145,42 @@
                 <button id="hard-reset-btn" style="width: 100%; padding: 12px; background: transparent; color: var(--error-color); border: 1px solid var(--error-color); border-radius: var(--radius-md); font-weight: 600; cursor: pointer; margin-top: 16px;">Tüm Verileri Sıfırla</button>
             </div>
         </div>
+
+        <!-- Food Search Modal -->
+        <div id="food-search-modal" class="modal hidden">
+            <div class="modal-content" style="height: 85%; padding-bottom: 24px; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3>Yemek Ara</h3>
+                    <button id="close-food-search-btn" class="icon-btn" style="color: var(--c-dark-blue); background: rgba(18, 65, 112, 0.1);">✕</button>
+                </div>
+                
+                <div class="form-group" style="padding: 16px; margin-bottom: 16px;">
+                    <input type="text" id="food-search-input" placeholder="Yemek veya gıda adı ara..." style="padding: 12px; font-size: 16px;">
+                </div>
+
+                <div id="food-search-results" class="scroll-content" style="padding: 0; padding-bottom: 20px; flex: 1;">
+                    <!-- Results will appear here -->
+                </div>
+
+                <!-- Calculator Panel (Hidden by default) -->
+                <div id="food-calc-panel" class="hidden" style="background: var(--c-gradient-1); border-radius: var(--radius-lg); padding: 16px; margin-top: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--c-main);">
+                    <h4 id="selected-food-name" style="color: var(--c-dark-blue); margin-bottom: 8px;">-</h4>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">100 gramı <span id="selected-food-kcal" style="font-weight: bold;">0</span> kcal. <span id="selected-food-hint" style="font-style: italic;"></span></p>
+                    
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div style="flex: 1; display: flex; align-items: center; background: white; border-radius: var(--radius-md); padding: 8px 12px; border: 1px solid rgba(0,0,0,0.1);">
+                            <input type="number" id="food-gram-input" placeholder="Gramaj girin" style="border: none; width: 100%; outline: none; font-size: 18px; font-weight: bold; color: var(--c-dark-teal); background: transparent; padding: 0;">
+                            <span style="color: var(--text-muted); font-weight: 500;">g</span>
+                        </div>
+                        <div style="font-size: 20px; font-weight: 800; color: var(--c-main); width: 80px; text-align: center;">
+                            <span id="calculated-kcal-display">0</span> <small style="font-size: 12px; font-weight: normal;">kcal</small>
+                        </div>
+                    </div>
+                    
+                    <button id="add-calculated-food-btn" class="primary-btn" style="padding: 14px; font-size: 16px; margin-top: 16px;">Öğüne Ekle</button>
+                </div>
+            </div>
+        </div>
     </div>
     
     <script src="app.js"></script>

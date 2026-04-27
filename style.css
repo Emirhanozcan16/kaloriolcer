@@ -681,6 +681,25 @@ body {
     transition: opacity 0.4s ease;
 }
 
+/* Food Search Styles */
+.food-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.food-list-item:hover {
+    background: rgba(103, 192, 144, 0.1);
+}
+
+.food-list-item:last-child {
+    border-bottom: none;
+}
+
 .modal.hidden {
     opacity: 0;
     pointer-events: none;

@@ -25,6 +25,23 @@ const saveNewGoalBtn = document.getElementById('save-new-goal-btn');
 const settingMealBtns = document.querySelectorAll('.setting-meal-btn');
 const hardResetBtn = document.getElementById('hard-reset-btn');
 
+// Food Search Modal Elements
+let foodDatabase = [];
+const foodSearchModal = document.getElementById('food-search-modal');
+const closeFoodSearchBtn = document.getElementById('close-food-search-btn');
+const foodSearchInput = document.getElementById('food-search-input');
+const foodSearchResults = document.getElementById('food-search-results');
+const foodCalcPanel = document.getElementById('food-calc-panel');
+const foodGramInput = document.getElementById('food-gram-input');
+const addCalculatedFoodBtn = document.getElementById('add-calculated-food-btn');
+const selectedFoodName = document.getElementById('selected-food-name');
+const selectedFoodKcal = document.getElementById('selected-food-kcal');
+const selectedFoodHint = document.getElementById('selected-food-hint');
+const calculatedKcalDisplay = document.getElementById('calculated-kcal-display');
+
+let currentSearchMealIndex = null;
+let currentSelectedFood = null;
+
 // PWA Install Logic
 let deferredPrompt;
 const installBtn = document.getElementById('install-btn');
@@ -56,12 +73,24 @@ let dailyData = JSON.parse(localStorage.getItem(`kaloriData_${todayDate}`)) || {
 let selectedMeals = 0;
 
 // --- Initialization ---
-function init() {
+async function init() {
+    await fetchFoodDatabase();
     if (userConfig && userConfig.goal && userConfig.meals) {
         showDashboard();
         requestNotificationPermission();
     } else {
         showSetup();
+    }
+}
+
+async function fetchFoodDatabase() {
+    try {
+        const response = await fetch('./yemekler.json');
+        if (response.ok) {
+            foodDatabase = await response.json();
+        }
+    } catch (e) {
+        console.error('Yemekler yüklenemedi:', e);
     }
 }
 
@@ -259,6 +288,7 @@ function renderDashboard() {
                 <div class="meal-input-wrapper">
                     <input type="number" class="meal-input" id="meal-input-${i}" placeholder="0" value="${isSaved ? mealVal : ''}">
                     <span class="kcal-label">kcal</span>
+                    <button class="search-food-btn" onclick="openFoodSearch(${i})" title="Yemek Ara" style="background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 4px; margin-left: 4px; transition: transform 0.2s;">🔍</button>
                 </div>
             </div>
             <button class="save-meal-btn" onclick="saveMeal(${i})" title="Kaydet">
@@ -270,6 +300,86 @@ function renderDashboard() {
     
     checkNotifications();
 }
+
+// --- Food Search Logic ---
+window.openFoodSearch = function(index) {
+    currentSearchMealIndex = index;
+    foodSearchModal.classList.remove('hidden');
+    foodSearchInput.value = '';
+    foodCalcPanel.classList.add('hidden');
+    renderFoodResults(foodDatabase); // Show all initially or empty
+    setTimeout(() => foodSearchInput.focus(), 100);
+}
+
+closeFoodSearchBtn.addEventListener('click', () => {
+    foodSearchModal.classList.add('hidden');
+});
+
+foodSearchInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase().trim();
+    if (term.length === 0) {
+        renderFoodResults(foodDatabase);
+        return;
+    }
+    const filtered = foodDatabase.filter(food => food.name.toLowerCase().includes(term));
+    renderFoodResults(filtered);
+});
+
+function renderFoodResults(results) {
+    foodSearchResults.innerHTML = '';
+    if (results.length === 0) {
+        foodSearchResults.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Sonuç bulunamadı.</p>';
+        return;
+    }
+    results.forEach(food => {
+        const item = document.createElement('div');
+        item.className = 'food-list-item';
+        item.innerHTML = `
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: var(--c-dark-blue); font-size: 15px;">${food.name}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${food.unit_hint}</div>
+            </div>
+            <div style="font-weight: 800; color: var(--c-main); font-size: 14px;">${food.kcal_per_100g} <small style="font-weight: normal; color: var(--text-muted);">kcal/100g</small></div>
+        `;
+        item.addEventListener('click', () => selectFood(food));
+        foodSearchResults.appendChild(item);
+    });
+}
+
+function selectFood(food) {
+    currentSelectedFood = food;
+    foodCalcPanel.classList.remove('hidden');
+    selectedFoodName.textContent = food.name;
+    selectedFoodKcal.textContent = food.kcal_per_100g;
+    selectedFoodHint.textContent = `(${food.unit_hint})`;
+    foodGramInput.value = '';
+    calculatedKcalDisplay.textContent = '0';
+    foodGramInput.focus();
+}
+
+foodGramInput.addEventListener('input', (e) => {
+    if (!currentSelectedFood) return;
+    const grams = parseInt(e.target.value);
+    if (isNaN(grams) || grams < 0) {
+        calculatedKcalDisplay.textContent = '0';
+        return;
+    }
+    const kcal = Math.round((grams * currentSelectedFood.kcal_per_100g) / 100);
+    calculatedKcalDisplay.textContent = kcal;
+});
+
+addCalculatedFoodBtn.addEventListener('click', () => {
+    const calculated = parseInt(calculatedKcalDisplay.textContent);
+    if (calculated > 0 && currentSearchMealIndex !== null) {
+        const inputEl = document.getElementById(`meal-input-${currentSearchMealIndex}`);
+        const currentVal = parseInt(inputEl.value) || 0;
+        inputEl.value = currentVal + calculated;
+        // Automatically save the meal with the new value
+        saveMeal(currentSearchMealIndex);
+        foodSearchModal.classList.add('hidden');
+        addNotification(`Yemek eklendi: ${calculated} kcal`, 'success', '🍽️');
+    }
+});
 
 window.saveMeal = function(index) {
     const input = document.getElementById(`meal-input-${index}`);
