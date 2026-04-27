@@ -71,6 +71,10 @@ startBtn.addEventListener('click', () => {
     userConfig = { goal, meals: selectedMeals };
     localStorage.setItem('kaloriConfig', JSON.stringify(userConfig));
     
+    if(!localStorage.getItem('kaloriStartDate')) {
+        localStorage.setItem('kaloriStartDate', new Date().toISOString());
+    }
+    
     // Initialize today's data if empty
     if(Object.keys(dailyData).length === 0) {
         dailyData = {
@@ -112,6 +116,18 @@ resetBtn.addEventListener('click', () => {
 
 function renderDashboard() {
     // Header Stats
+    const startDateStr = localStorage.getItem('kaloriStartDate') || new Date().toISOString();
+    const startDate = new Date(startDateStr);
+    const now = new Date();
+    const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayDiff = Math.floor((nowMidnight - startMidnight) / (1000 * 60 * 60 * 24)) + 1;
+    
+    const headerTitle = document.querySelector('.dash-header h2');
+    if (headerTitle) {
+        headerTitle.textContent = `Gün ${dayDiff}`;
+    }
+
     goalCalsEl.textContent = userConfig.goal;
     consumedCalsEl.textContent = dailyData.total;
     
@@ -141,7 +157,13 @@ function renderDashboard() {
     mealCountDisplay.textContent = userConfig.meals;
     mealsListEl.innerHTML = '';
     
-    const mealNames = ['Kahvaltı', 'Öğle Yemeği', 'Akşam Yemeği', 'Ara Öğün 1', 'Ara Öğün 2'];
+    const mealNamesMap = {
+        2: ['Sabah', 'Akşam'],
+        3: ['Sabah', 'Öğle', 'Akşam'],
+        4: ['Sabah', 'Öğle', 'Öğleden Sonra', 'Akşam'],
+        5: ['Sabah', 'Öğle', 'Öğleden Sonra', 'Akşam', 'Gece']
+    };
+    const mealNames = mealNamesMap[userConfig.meals] || ['Öğün 1', 'Öğün 2'];
     
     for (let i = 0; i < userConfig.meals; i++) {
         const mealVal = dailyData.meals[i];

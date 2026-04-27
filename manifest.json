@@ -9,6 +9,11 @@
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/8144/8144415.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/8144/8144415.png",
       "sizes": "512x512",
       "type": "image/png"
     }
