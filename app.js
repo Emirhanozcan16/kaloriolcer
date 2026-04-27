@@ -138,7 +138,7 @@ startBtn.addEventListener('click', () => {
     // Initialize today's data if empty
     if(Object.keys(dailyData).length === 0) {
         dailyData = {
-            meals: Array(selectedMeals).fill(null),
+            meals: Array(selectedMeals).fill(null).map(() => ({ items: [], total: 0 })),
             total: 0
         };
         saveDailyData();
@@ -156,9 +156,18 @@ function showDashboard() {
     // Ensure daily data structure matches config
     if(!dailyData.meals || dailyData.meals.length !== userConfig.meals) {
         dailyData = {
-            meals: Array(userConfig.meals).fill(null),
+            meals: Array(userConfig.meals).fill(null).map(() => ({ items: [], total: 0 })),
             total: 0
         };
+        saveDailyData();
+    }
+
+    // Migration for old data format
+    if (dailyData.meals.length > 0 && typeof dailyData.meals[0] !== 'object') {
+        dailyData.meals = dailyData.meals.map(val => ({
+            items: (val !== null && val > 0) ? [{ name: 'Manuel Giriş', kcal: val, grams: 0 }] : [],
+            total: val || 0
+        }));
         saveDailyData();
     }
     
@@ -235,7 +244,7 @@ function renderDashboard() {
     
     const headerTitle = document.querySelector('.dash-header h2');
     if (headerTitle) {
-        headerTitle.textContent = `Gün ${dayDiff}`;
+        headerTitle.textContent = `Kalori Takibi`;
     }
 
     goalCalsEl.textContent = userConfig.goal;
@@ -276,29 +285,77 @@ function renderDashboard() {
     const mealNames = mealNamesMap[userConfig.meals] || ['Öğün 1', 'Öğün 2'];
     
     for (let i = 0; i < userConfig.meals; i++) {
-        const mealVal = dailyData.meals[i];
-        const isSaved = mealVal !== null;
+        const meal = dailyData.meals[i];
+        const isSaved = meal.total > 0;
         
         const card = document.createElement('div');
         card.className = `meal-card ${isSaved ? 'saved' : ''}`;
         
+        let itemsHtml = '';
+        meal.items.forEach((item, itemIdx) => {
+            itemsHtml += `
+                <div class="food-item-row">
+                    <div class="food-item-info">
+                        <span class="food-item-name">${item.name}</span>
+                        <span class="food-item-grams">${item.grams > 0 ? item.grams + 'g' : ''}</span>
+                    </div>
+                    <div class="food-item-actions">
+                        <span class="food-item-kcal">${item.kcal} kcal</span>
+                        <button class="delete-food-btn" onclick="deleteFood(${i}, ${itemIdx})">✕</button>
+                    </div>
+                </div>
+            `;
+        });
+
         card.innerHTML = `
-            <div class="meal-info">
+            <div class="meal-header">
                 <span class="meal-name">${i < mealNames.length ? mealNames[i] : 'Öğün ' + (i+1)}</span>
-                <div class="meal-input-wrapper">
-                    <input type="number" class="meal-input" id="meal-input-${i}" placeholder="0" value="${isSaved ? mealVal : ''}">
-                    <span class="kcal-label">kcal</span>
-                    <button class="search-food-btn" onclick="openFoodSearch(${i})" title="Yemek Ara" style="background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 4px; margin-left: 4px; transition: transform 0.2s;">🔍</button>
+                <div class="meal-header-actions">
+                    <span class="meal-total">${meal.total} kcal</span>
+                    <button class="search-food-btn" onclick="openFoodSearch(${i})" title="Yemek Ara">🔍</button>
                 </div>
             </div>
-            <button class="save-meal-btn" onclick="saveMeal(${i})" title="Kaydet">
-                ${isSaved ? '✓' : '+'}
-            </button>
+            <div class="meal-items-list">
+                ${itemsHtml}
+                <div class="manual-entry-row">
+                    <input type="number" class="manual-kcal-input" id="manual-kcal-${i}" placeholder="Manuel kalori...">
+                    <button class="add-manual-btn" onclick="addManualKcal(${i})">+</button>
+                </div>
+            </div>
         `;
         mealsListEl.appendChild(card);
     }
     
     checkNotifications();
+}
+
+window.deleteFood = function(mealIdx, itemIdx) {
+    dailyData.meals[mealIdx].items.splice(itemIdx, 1);
+    updateMealTotal(mealIdx);
+    saveDailyData();
+    renderDashboard();
+    updateCharts();
+}
+
+window.addManualKcal = function(mealIdx) {
+    const input = document.getElementById(`manual-kcal-${mealIdx}`);
+    const val = parseInt(input.value);
+    if (isNaN(val) || val <= 0) return;
+
+    dailyData.meals[mealIdx].items.push({
+        name: 'Manuel Giriş',
+        grams: 0,
+        kcal: val
+    });
+    updateMealTotal(mealIdx);
+    saveDailyData();
+    renderDashboard();
+    updateCharts();
+}
+
+function updateMealTotal(mealIdx) {
+    dailyData.meals[mealIdx].total = dailyData.meals[mealIdx].items.reduce((sum, item) => sum + item.kcal, 0);
+    calculateTotal();
 }
 
 // --- Food Search Logic ---
@@ -358,36 +415,51 @@ function selectFood(food) {
 }
 
 foodGramInput.addEventListener('input', (e) => {
+    updateCalculatedKcal();
+});
+
+function updateCalculatedKcal() {
     if (!currentSelectedFood) return;
-    const grams = parseInt(e.target.value);
+    let grams = parseInt(foodGramInput.value);
     if (isNaN(grams) || grams < 0) {
-        calculatedKcalDisplay.textContent = '0';
-        return;
+        // Use default if empty
+        grams = extractDefaultGrams(currentSelectedFood.unit_hint);
     }
     const kcal = Math.round((grams * currentSelectedFood.kcal_per_100g) / 100);
     calculatedKcalDisplay.textContent = kcal;
-});
+}
+
+function extractDefaultGrams(hint) {
+    const match = hint.match(/~(\d+)g/);
+    return match ? parseInt(match[1]) : 100;
+}
 
 addCalculatedFoodBtn.addEventListener('click', () => {
-    const calculated = parseInt(calculatedKcalDisplay.textContent);
+    let grams = parseInt(foodGramInput.value);
+    if (isNaN(grams) || grams < 0) {
+        grams = extractDefaultGrams(currentSelectedFood.unit_hint);
+    }
+    const calculated = Math.round((grams * currentSelectedFood.kcal_per_100g) / 100);
+    
     if (calculated > 0 && currentSearchMealIndex !== null) {
-        const inputEl = document.getElementById(`meal-input-${currentSearchMealIndex}`);
-        const currentVal = parseInt(inputEl.value) || 0;
-        inputEl.value = currentVal + calculated;
-        // Automatically save the meal with the new value
-        saveMeal(currentSearchMealIndex);
+        dailyData.meals[currentSearchMealIndex].items.push({
+            name: currentSelectedFood.name,
+            grams: grams,
+            kcal: calculated
+        });
+        
+        updateMealTotal(currentSearchMealIndex);
+        saveDailyData();
+        renderDashboard();
+        updateCharts();
+        
         foodSearchModal.classList.add('hidden');
-        addNotification(`Yemek eklendi: ${calculated} kcal`, 'success', '🍽️');
+        addNotification(`${currentSelectedFood.name} eklendi: ${calculated} kcal`, 'success', '🍽️');
     }
 });
 
 window.saveMeal = function(index) {
-    const input = document.getElementById(`meal-input-${index}`);
-    const val = parseInt(input.value);
-    
-    if (isNaN(val) || val < 0) return;
-    
-    dailyData.meals[index] = val;
+    // This function is now legacy or can be used for generic saving
     calculateTotal();
     saveDailyData();
     renderDashboard();
@@ -395,7 +467,7 @@ window.saveMeal = function(index) {
 }
 
 function calculateTotal() {
-    dailyData.total = dailyData.meals.reduce((acc, curr) => acc + (curr || 0), 0);
+    dailyData.total = dailyData.meals.reduce((acc, meal) => acc + (meal.total || 0), 0);
 }
 
 function saveDailyData() {
@@ -435,7 +507,7 @@ function checkNotifications() {
     const hour = now.getHours();
     
     let emptyMeals = 0;
-    dailyData.meals.forEach(m => { if(m === null) emptyMeals++; });
+    dailyData.meals.forEach(m => { if(m.total === 0) emptyMeals++; });
     
     // Check missing meals by schedule
     if (userConfig && userConfig.meals && mealSchedules[userConfig.meals]) {
@@ -443,7 +515,7 @@ function checkNotifications() {
         
         for (let i = 0; i < schedule.length; i++) {
             const targetHour = schedule[i];
-            const isMealEmpty = dailyData.meals[i] === null;
+            const isMealEmpty = dailyData.meals[i].total === 0;
             
             if (hour >= targetHour && isMealEmpty) {
                 const msg = `Saat ${targetHour}:00'ı geçti, ${i + 1}. öğünü henüz girmediniz!`;
