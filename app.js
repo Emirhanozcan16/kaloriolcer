@@ -25,6 +25,29 @@ const saveNewGoalBtn = document.getElementById('save-new-goal-btn');
 const settingMealBtns = document.querySelectorAll('.setting-meal-btn');
 const hardResetBtn = document.getElementById('hard-reset-btn');
 
+// PWA Install Logic
+let deferredPrompt;
+const installBtn = document.getElementById('install-btn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn) installBtn.classList.remove('hidden');
+});
+
+if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        }
+    });
+}
+
 // --- State ---
 let userConfig = JSON.parse(localStorage.getItem('kaloriConfig')) || null;
 let todayDate = new Date().toISOString().split('T')[0];

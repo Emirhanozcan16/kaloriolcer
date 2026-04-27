@@ -1,10 +1,11 @@
-const CACHE_NAME = 'kalori-v2';
+const CACHE_NAME = 'kalori-v3';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
+  './icon.png',
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
