@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#215B63">
+    <title>KaloriÖlçer</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen">
+            <div class="setup-header">
+                <h1>KaloriÖlçer</h1>
+                <p>Hedeflerine ulaşmaya başla</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="calorie-goal">Günlük Kalori Hedefiniz</label>
+                <input type="number" id="calorie-goal" placeholder="Örn: 2000" min="500" max="10000">
+            </div>
+
+            <div class="form-group">
+                <label for="meal-count">Günde Kaç Öğün Yiyeceksiniz?</label>
+                <div class="meal-options">
+                    <button class="meal-btn" data-value="2">2 Öğün</button>
+                    <button class="meal-btn" data-value="3">3 Öğün</button>
+                    <button class="meal-btn" data-value="4">4 Öğün</button>
+                    <button class="meal-btn" data-value="5">5 Öğün</button>
+                </div>
+            </div>
+
+            <button id="start-btn" class="primary-btn" disabled>Başla</button>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboard-screen" class="screen hidden">
+            <!-- Header -->
+            <header class="dash-header">
+                <div class="header-top">
+                    <h2>Bugünün Özeti</h2>
+                    <button id="reset-btn" class="icon-btn" title="Ayarları Sıfırla">⚙️</button>
+                </div>
+                
+                <div class="calorie-card">
+                    <div class="calorie-circle">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg"
+                            d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path class="circle"
+                            stroke-dasharray="0, 100"
+                            id="calorie-progress"
+                            d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                        </svg>
+                        <div class="calorie-text">
+                            <span id="remaining-cals">0</span>
+                            <small>Kaldı</small>
+                        </div>
+                    </div>
+                    <div class="calorie-details">
+                        <div class="detail-item">
+                            <span class="label">Alınan</span>
+                            <span class="value" id="consumed-cals">0</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Hedef</span>
+                            <span class="value" id="goal-cals">0</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="scroll-content">
+                <!-- Notifications -->
+                <div id="notifications-container"></div>
+
+                <!-- Meals Section -->
+                <section class="meals-section">
+                    <h3>Öğünler (<span id="meal-count-display">0</span> Öğün)</h3>
+                    <div id="meals-list" class="meals-list">
+                        <!-- Meals will be injected here -->
+                    </div>
+                </section>
+
+                <!-- Statistics Section -->
+                <section class="stats-section">
+                    <h3>İstatistikler</h3>
+                    
+                    <div class="stat-card">
+                        <h4>Haftalık Ortalama</h4>
+                        <div class="chart-container">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h4>Aylık Ortalama</h4>
+                        <div class="chart-container">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

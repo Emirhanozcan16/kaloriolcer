@@ -1,0 +1,16 @@
+{
+  "name": "KaloriÖlçer",
+  "short_name": "Kalori",
+  "description": "Günlük kalori ve öğün takip uygulaması.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f9f6",
+  "theme_color": "#215B63",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/8144/8144415.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
