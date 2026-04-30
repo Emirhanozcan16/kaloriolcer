@@ -1,4 +1,5 @@
 // --- DOM Elements ---
+const splashScreen = document.getElementById('splash-screen');
 const setupScreen = document.getElementById('setup-screen');
 const dashboardScreen = document.getElementById('dashboard-screen');
 
@@ -74,13 +75,27 @@ let selectedMeals = 0;
 
 // --- Initialization ---
 async function init() {
+    // Both setup and dashboard should be hidden initially so they don't peek
+    setupScreen.classList.add('hidden');
+    dashboardScreen.classList.add('hidden');
+
     await fetchFoodDatabase();
-    if (userConfig && userConfig.goal && userConfig.meals) {
-        showDashboard();
-        requestNotificationPermission();
-    } else {
-        showSetup();
-    }
+    
+    // Hide splash screen after 2.5 seconds
+    setTimeout(() => {
+        splashScreen.classList.add('fade-out');
+        
+        setTimeout(() => {
+            splashScreen.style.display = 'none';
+        }, 600); // Wait for fade out transition
+
+        if (userConfig && userConfig.goal && userConfig.meals) {
+            showDashboard();
+            requestNotificationPermission();
+        } else {
+            showSetup();
+        }
+    }, 2500);
 }
 
 async function fetchFoodDatabase() {

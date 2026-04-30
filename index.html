@@ -12,6 +12,12 @@
 </head>
 <body>
     <div id="app" class="app-container">
+        <!-- Splash Screen -->
+        <div id="splash-screen" class="splash-screen">
+            <img src="icon.png" alt="KaloriÖlçer Logo" class="splash-logo">
+            <h1 class="splash-title">KaloriÖlçer</h1>
+        </div>
+
         <!-- Setup Screen -->
         <div id="setup-screen" class="screen">
             <div class="setup-header">
@@ -43,7 +49,10 @@
             <!-- Header -->
             <header class="dash-header">
                 <div class="header-top">
-                    <h2>Bugünün Özeti</h2>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <img src="icon.png" alt="Kalori Takip Logo" style="width: 32px; height: 32px; border-radius: 8px; background: white; padding: 2px;">
+                        <h2>Bugünün Özeti</h2>
+                    </div>
                     <div>
                         <button id="install-btn" class="icon-btn hidden" title="Uygulamayı Yükle" style="display: inline-flex; margin-right: 8px;">⬇️</button>
                         <button id="reset-btn" class="icon-btn" title="Ayarları Sıfırla" style="display: inline-flex;">⚙️</button>
